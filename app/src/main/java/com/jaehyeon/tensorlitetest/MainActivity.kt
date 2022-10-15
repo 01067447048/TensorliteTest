@@ -25,11 +25,19 @@ class MainActivity : AppCompatActivity() {
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
         initModel()
 
+        /**
+         * image 선택 하면 선택 한 image 를 viewmodel로 전달하고
+         * ImageView 에 선택한 이미지를 보여 줌.
+         */
         imagePickerLauncher = registerImagePicker { result ->
             binding.ivSelectPic.setImageURI(result.lastOrNull()?.uri)
             viewModel.addImage(result)
         }
 
+        /**
+         * button 클릭 시 imagePickerLauncher 실행하여 이미지를 선택.
+         * 사진은 1개만 가져옴.
+         */
         binding.btnPichture.setOnClickListener {
             val config = ImagePickerConfig(
                 mode = ImagePickerMode.SINGLE,
@@ -41,7 +49,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        /**
+         * viewmodel 에서 이미지를 flow 로 관리 하기 때문에 flow 처리를 위한 Coroutine Scope
+         */
         lifecycleScope.launchWhenResumed {
+            /**
+             * flow 에서 사진이 업로드 될 시 모델에서 분류.
+             */
             viewModel.images.collectLatest { image ->
                 image?.let {
                     try {
@@ -56,13 +70,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Activity 에서 ClassifyModel 을 사용 하기 위해 초기화 하는 함수.
+     */
+
     private fun initModel() {
         model = ClassifyModel(assets, ClassifyModel.TEST_MODEL, applicationContext)
         model.init()
     }
 
+    /**
+     * 종료시 Interpreter 자원 해제.
+     */
     override fun onDestroy() {
-        if (::model.isInitialized) model.finish()
+        model.finish()
         super.onDestroy()
     }
 }
